@@ -31,4 +31,4 @@ Manually execute the `scheduleToDos()` function and wait for it to finish.
 
 The entry should appear in Habitica as a To-Do item.
 
-**Note:** The default timezone for Google Scripts is America/Los_Angeles (Pacific time). If your calendar is in a different timezone, this will not be taken into account. The easiest way to address this is to add an ![app manifest](https://developers.google.com/apps-script/concepts/manifests) and change the timezone to one of the ![valid values](https://docs.oracle.com/javase/8/docs/api/java/time/ZoneId.html) that correspond to the timezone of your calendar.
+**Note:** The default timezone for Google Scripts is America/Los_Angeles (Pacific time). If your calendar is in a different timezone, this will not be taken into account. The easiest way to address this is to add an [app manifest](https://developers.google.com/apps-script/concepts/manifests) and change the timezone to one of the [valid values](https://docs.oracle.com/javase/8/docs/api/java/time/ZoneId.html) that correspond to the timezone of your calendar.
