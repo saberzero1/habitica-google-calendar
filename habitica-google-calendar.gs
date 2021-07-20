@@ -1,3 +1,6 @@
+// This code is licensed under the same terms as Habitica:
+// https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
+// For questions or suggestions, message @saberzero1 on Habitica or open an issue on GitHub.
 // User ID and API Token can be founnd here: https://habitica.com/user/settings/api
 // For more information on the Habitica API: https://habitica.com/apidoc/
 var habId = "";
