@@ -115,26 +115,3 @@ function scheduleToDos() {
     }
   }
 }
-function scheduleJoinQuest() {
-  var paramsTemplatePost = {
-    "method" : "post",
-    "headers" : {
-      "x-api-user" : habId, 
-      "x-api-key" : habToken
-    }
-  }
-  var paramsTemplateGet = {
-    "method" : "get",
-    "headers" : {
-      "x-api-user" : habId, 
-      "x-api-key" : habToken
-    }
-  }
-  var response = UrlFetchApp.fetch("https://habitica.com/api/v3/groups/party", paramsTemplateGet);
-  var party = JSON.parse(response);
-  if ((party.data.quest.key != undefined) && (party.data.quest.active != true) && (party.data.quest.members[habId] == undefined)){
-    var params = paramsTemplatePost;
-    
-    UrlFetchApp.fetch("https://habitica.com/api/v3/groups/party/quests/accept", params)
-  }
-}
