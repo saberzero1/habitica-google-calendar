@@ -3,7 +3,7 @@
 [![Google App Scripts](https://img.shields.io/badge/Google%20App%20Scripts-v2019-green.svg)](https://script.google.com/home)
 
 
-# habitica-google-calendar
+# Habitica Google Calendar Synchronization.
 
 Automatically sync Google Calendar entries as Habitica To Do items.
 
