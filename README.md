@@ -16,7 +16,7 @@ Automatically sync Google Calendar entries as Habitica To Do items.
 ## Installation
 
  - Copy the contents of `habitica-google-calendar.gs` into an empty Google App Scripts file.
- - Create a Google Calendar for the To Dos, or use an existing one.
+ - Create a Google Calendar for the To-Dos, or use an existing one.
  - Set the values of `habId`, `habToken` and `calendarName`.
  - Set a daily time-based trigger to execute `scheduleToDos()` somewhere after midnight in your timezone.
  - Insert some calendar entries in the Google Calendar.
@@ -25,8 +25,8 @@ Automatically sync Google Calendar entries as Habitica To Do items.
     
 ## Verifying installation
 
-To verify the installation, create a calendar entry with description for today in the Google Calendar set as `calendarName`.
+To verify the installation, create a calendar entry with a description for today in the Google Calendar set as `calendarName`.
 
 Manually execute the `scheduleToDos()` function and wait for it to finish.
 
-Your entry should appear in Habitica as a To Do item.
+The entry should appear in Habitica as a To-Do item.
