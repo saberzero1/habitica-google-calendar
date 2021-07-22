@@ -3,6 +3,7 @@
 // For questions or suggestions, message @saberzero1 on Habitica or open an issue on GitHub.
 // User ID and API Token can be founnd here: https://habitica.com/user/settings/api
 // For more information on the Habitica API: https://habitica.com/apidoc/
+// Replace "HabiticaReminders" with desired calendar name.
 var habId = "";
 var habToken = "";
 var calendarMame = "HabiticaReminders";
@@ -15,7 +16,6 @@ var attribute = "con"; // Attribute to use for task. Possible values: "str", "in
 // Uses calendar titles as todo items and descriptions as subtasks.
 function scheduleToDos() {
   var now = new Date();
-  // Replace "HabiticaReminders" with desired calendar name.
   var events = CalendarApp.getCalendarsByName(calendarMame)[0].getEventsForDay(now);
   
   // Get current date
