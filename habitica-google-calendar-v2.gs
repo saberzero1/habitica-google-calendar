@@ -52,13 +52,18 @@ function syncToHabbitica() {
         newTasks.push(events[j][i].getTitle());
 
         var taskTitle = events[j][i].getTitle();
+        var taskTimeStart = events[j][i].getStartTime().toISOString();
+        console.log(taskTimeStart);
+        var taskTime = events[j][i].getStartTime().toString().substring(0, 25);
+        var taskTimeEnd = events[j][i].getEndTime().toString().substring(0, 25);
         const params = templateParams._post;
         params["payload"] = {
           text: ":calendar: " + taskTitle,
+          notes: "Start: " + taskTime + "\n\nEnd: " + taskTimeEnd,
           type: "daily",
           priority: "2",
-          date: dates[j],
-          startDate: dates[j],
+          date: taskTimeStart,
+          startDate: taskTimeStart,
           repeat: "false"
         }
 
@@ -69,6 +74,23 @@ function syncToHabbitica() {
         }
       }
     }
+  }
+
+  var sorting = fetchExistingTasks(habTaskURL, templateParams);
+  console.log(sorting.data[0]);
+  var sortArray = [];
+  for (i = 0; i < sorting.data.length; i++) {
+    if (sorting.data[i].type == "daily") {
+      sortArray.push({date: sorting.data[i].startDate, time: sorting.data[i].notes.substring(15, sorting.data[i].notes.length-1), id: sorting.data[i]._id});
+    }
+  }
+  var unsortedArray = sortArray;
+  sortArray.sort((a, b) => (a.date > b.date) ? 1 : (a.date === b.date) ? ((a.time > b.time) ? 1 : -1) : -1 )
+  console.log(sortArray);
+  console.log(unsortedArray);
+  sortArray.reverse();
+  for (i = 0; i < sortArray.length; i++) {
+    UrlFetchApp.fetch(habTaskURL + sortArray[i].id + "/move/to/0", templateParams._post);
   }
 }
 
