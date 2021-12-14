@@ -137,8 +137,8 @@ function fetchTodayCompletedTasks(habTaskURL, templateParams, today) {
 
 // deletes calendar events from Google Calendar based on title
 function deleteCalendarEvents(eventTitle, dates) {
-  title = eventTitle.replace(':calendar: ', '');
-  var fromDate = new Date(dates[0]); 
+  var title = eventTitle.replace(':calendar: ', '');
+  var fromDate = new Date(new Date(0)); 
   var toDate = new Date(dates[dates.length-1]);
   var calendar = CalendarApp.getCalendarsByName(CALENDAR_NAME)[0];
   var eventsCalendar = calendar.getEvents(fromDate, toDate);
