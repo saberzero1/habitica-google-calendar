@@ -13,7 +13,7 @@ function syncToHabbitica() {
   for (i = 0; i < daysAhead; i++){
     dates.push(new Date(today.getTime() + i*1000*60*60*24));
   }
-  for(i = 0; i < 7; i++){
+  for(i = 0; i < daysAhead; i++){
     events[i] = CalendarApp.getCalendarsByName(CALENDAR_NAME)[0].getEventsForDay(dates[i]);
   }
   console.log(dates);
@@ -36,6 +36,14 @@ function syncToHabbitica() {
       headers: { "x-api-user": HABITICA_ID, "x-api-key": HABITICA_TOKEN },
     },
   };
+
+  var paramsTemplatePost = {
+    "method" : "post",
+    "headers" : {
+      "x-api-user" : HABITICA_ID, 
+      "x-api-key" : HABITICA_TOKEN
+    }
+  }
 
   const newTasks = [];
   const existingTasks = fetchExistingTasks(habTaskURL, templateParams);
@@ -67,6 +75,14 @@ function syncToHabbitica() {
         var taskTime = events[j][i].getStartTime().toString().substring(0, 25);
         var taskTimeEnd = events[j][i].getEndTime().toString().substring(0, 25);
         var ali = getDateFromISO(taskTimeStart).toString().toUpperCase();
+        var description = events[j][i].getDescription();
+        var descriptionArray = [];
+        if (description.length > 0) {
+          descriptionArray = description.split('\n');
+        }
+        else {
+          descriptionArray = [];
+        }
         console.log(ali);
         const params = templateParams._post;
         params["payload"] = {
@@ -87,6 +103,21 @@ function syncToHabbitica() {
           console.log("Fetching " + taskTitle);
           UrlFetchApp.fetch(habTaskURL + "user", params);
           Utilities.sleep(5000);
+          if (descriptionArray.length > 0) {
+            var retrievedTasks = JSON.parse(UrlFetchApp.fetch(habTaskURL + "user?type=dailys", templateParams._get));
+            console.log("ID: " + retrievedTasks);
+            var retrievedID = retrievedTasks["data"][0]._id;
+            console.log("ID2: " + retrievedID);
+            var urlTask = "https://habitica.com/api/v3/tasks/" + retrievedID + "/checklist";
+            for (k = 0; k < descriptionArray.length; k++) {
+              var paramsChecklist = paramsTemplatePost;
+              paramsChecklist["payload"] = {
+                "text" : descriptionArray[k]
+              }
+              UrlFetchApp.fetch(urlTask, paramsChecklist);
+              Utilities.sleep(5000);
+            }
+          }
         }
         else {
           console.log("New duplicate task: " + params.payload.alias);
@@ -115,7 +146,14 @@ function syncToHabbitica() {
   sortArray.sort((a, b) => (a.date > b.date) ? 1 : (a.date === b.date) ? ((a.time > b.time) ? 1 : -1) : -1 )
   console.log(sortArray);
   console.log(unsortedArray);
-  if (sortArray[0].date != unsortedArray[0].date) {
+  var needsSorting = false;
+  for (var g = 0; g < sortArray.length; g++) {
+    if(sortArray[g].date != unsortedArray[g].date || sortArray[g].time != unsortedArray[g].time) {
+      needsSorting = true;
+      break;
+    }
+  }
+  if (needsSorting) {
     sortArray.reverse();
     console.log("Sorting");
     for (i = 0; i < sortArray.length; i++) {
