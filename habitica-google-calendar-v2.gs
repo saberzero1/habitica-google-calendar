@@ -139,11 +139,23 @@ function syncToHabbitica() {
   var unsortedArray = [];
   for (i = 0; i < sorting.data.length; i++) {
     if (sorting.data[i].type == "daily") {
-      sortArray.push({date: sorting.data[i].startDate, time: sorting.data[i].notes.substring(15, sorting.data[i].notes.length-1), id: sorting.data[i]._id});
-      unsortedArray.push({date: sorting.data[i].startDate, time: sorting.data[i].notes.substring(15, sorting.data[i].notes.length-1), id: sorting.data[i]._id})
+      if (sorting.data[i].notes != null) {
+        if (sorting.data[i].notes.startsWith("Start:")) {
+          sortArray.push({date: sorting.data[i].startDate, time: sorting.data[i].notes.substring(15, sorting.data[i].notes.length-1), id: sorting.data[i]._id, text: sorting.data[i].text});
+          unsortedArray.push({date: sorting.data[i].startDate, time: sorting.data[i].notes.substring(15, sorting.data[i].notes.length-1), id: sorting.data[i]._id, text: sorting.data[i].text});
+        }
+        else {
+          sortArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
+          unsortedArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
+        }
+      }
+      else {
+        sortArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
+        unsortedArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
+      }
     }
   }
-  sortArray.sort((a, b) => (a.date > b.date) ? 1 : (a.date === b.date) ? ((a.time > b.time) ? 1 : -1) : -1 )
+  sortArray.sort((a, b) => (a.date > b.date) ? 1 : (a.date === b.date) ? ((a.time > b.time) ? 1 : (a.time === b.time) ? ((a.text > b.text) ? 1 : -1 ) : -1 ) : -1 )
   console.log(sortArray);
   console.log(unsortedArray);
   var needsSorting = false;
