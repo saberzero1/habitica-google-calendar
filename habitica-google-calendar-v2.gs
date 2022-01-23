@@ -74,11 +74,11 @@ function syncToHabbitica() {
         console.log(taskTimeStart);
         var taskTime = events[j][i].getStartTime().toString().substring(0, 25);
         var taskTimeEnd = events[j][i].getEndTime().toString().substring(0, 25);
-        var ali = getDateFromISO(taskTimeStart).toString().toUpperCase();
-        var description = events[j][i].getDescription();
-        var descriptionArray = [];
+        var ali = getDateFromISO(taskTimeStart).toString().toUpperCase() + getDateFromISO(taskTimeEnd).toString().toUpperCase() + events[j][i].getTitle().toString().toUpperCase().replace(/[^0-9a-z]/gi, '')
+        var description = removeTags(events[j][i].getDescription());
+        var descriptionArray;
         if (description.length > 0) {
-          descriptionArray = description.split('\n');
+          descriptionArray = description.split("$br$");
         }
         else {
           descriptionArray = [];
@@ -98,34 +98,34 @@ function syncToHabbitica() {
 
 
         
-        const paramsText = completedTasksContent.indexOf(params.payload.text);
-        if (completedTasksContent.indexOf(params.payload.text) === -1) {
+        var paramsText = completedTasksContent.indexOf(params.payload.text);
+        if (paramsText == -1) {
           console.log("Fetching " + taskTitle);
           UrlFetchApp.fetch(habTaskURL + "user", params);
           Utilities.sleep(5000);
-          if (descriptionArray.length > 0) {
-            var retrievedTasks = JSON.parse(UrlFetchApp.fetch(habTaskURL + "user?type=dailys", templateParams._get));
-            console.log("ID: " + retrievedTasks);
-            var retrievedID = retrievedTasks["data"][0]._id;
-            console.log("ID2: " + retrievedID);
-            var urlTask = "https://habitica.com/api/v3/tasks/" + retrievedID + "/checklist";
-            for (k = 0; k < descriptionArray.length; k++) {
-              var paramsChecklist = paramsTemplatePost;
-              paramsChecklist["payload"] = {
-                "text" : descriptionArray[k]
-              }
-              UrlFetchApp.fetch(urlTask, paramsChecklist);
-              Utilities.sleep(5000);
-            }
-          }
         }
         else {
           console.log("New duplicate task: " + params.payload.alias);
           console.log("New duplicate task: " + present[present.indexOf(params.payload.alias)]);
-          if (params.payload.alias !== present[present.indexOf(params.payload.alias)]) {
+          if (params.payload.alias != present[present.indexOf(params.payload.alias)]) {
             console.log("New task: " + params.payload.alias);
             UrlFetchApp.fetch(habTaskURL + "user", params);
             Utilities.sleep(5000);
+              if (descriptionArray.length > 0) {
+              var retrievedTasks = JSON.parse(UrlFetchApp.fetch(habTaskURL + "user?type=dailys", templateParams._get));
+              console.log("ID: " + retrievedTasks);
+              var retrievedID = retrievedTasks["data"][0]._id;
+              console.log("ID2: " + retrievedID);
+              var urlTask = "https://habitica.com/api/v3/tasks/" + retrievedID + "/checklist";
+              for (k = 0; k < descriptionArray.length; k++) {
+                var paramsChecklist = paramsTemplatePost;
+                paramsChecklist["payload"] = {
+                  "text" : descriptionArray[k]
+                }
+                UrlFetchApp.fetch(urlTask, paramsChecklist);
+                Utilities.sleep(5000);
+              }
+            }
           }
         }
       }
@@ -267,4 +267,15 @@ function getDateFromISO(string) {
   } catch(e){
     return;
   }
+}
+
+function removeTags(str) {
+    if ((str===null) || (str===''))
+        return false;
+    else
+        str = str.toString();
+    str = str.replace(/<br>/g, "$br$");
+    str = str.replace(/(?:\r\n|\r|\n)/g, '$br$');
+    str = str.replace( /(<([^>]+)>)/ig, '');
+    return str;
 }
