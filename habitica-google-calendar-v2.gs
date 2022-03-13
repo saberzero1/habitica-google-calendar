@@ -3,10 +3,11 @@
                                                                // For questions or suggestions, message @saberzero1 on Habitica or open an issue on GitHub.
                                                                // User ID and API Token can be founnd here: https://habitica.com/user/settings/api
                                                                // For more information on the Habitica API: https://habitica.com/apidoc/
-const CALENDAR_NAME = "";                                      // Name of the Google Calendar to sync.
-const CALENDAR_MAIL_ADDRESS = "";                              // Mail account linked to the Google Calendar.
-const HABITICA_TOKEN = "";                                     // Habitica Token.
-const HABITICA_ID = "";                                        // Habitica ID.
+const CALENDAR_NAME = "HabiticaPlanning";                      // Name of the Google Calendar to sync.
+const CALENDAR_MAIL_ADDRESS = "ewjbangma@gmail.com";           // Mail account linked to the Google Calendar.
+const HABITICA_TOKEN = "bf1c3a8a-b4ca-4352-87b9-4a00b9aa40f1"; // Habitica Token.
+const HABITICA_ID = "2235c956-214a-47ec-8a04-aa776f24d189";    // Habitica ID.
+const daysAhead = 1;                                           // Number of days to sync including today.
                                                                // To find your Habitica Token and Habitica ID visit:
                                                                // https://habitica.com/user/settings/api
                                                                // Click "Show API Token" to reveal your token.
@@ -15,7 +16,6 @@ function syncToHabbitica() {
   const habTaskURL = "https://habitica.com/api/v3/tasks/";
 
   const today = new Date();
-  const daysAhead = 1; // Number of days to sync including today.
   const events = [];
   var dates = [];
   // Computes the date range.
