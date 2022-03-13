@@ -1,26 +1,28 @@
-const CALENDAR_NAME = "";
-const HABITICA_TOKEN = "";
-const HABITICA_ID = "";
-const CALENDAR_MAIL_ADDRESS = "";
+const CALENDAR_NAME = "";                                      // Name of the Google Calendar to sync.
+const CALENDAR_MAIL_ADDRESS = "";                              // Mail account linked to the Google Calendar.
+const HABITICA_TOKEN = "";                                     // Habitica Token.
+const HABITICA_ID = "";                                        // Habitica ID.
+                                                               // To find your Habitica Token and Habitica ID visit:
+                                                               // https://habitica.com/user/settings/api
+                                                               // Click "Show API Token" to reveal your token.
 
 function syncToHabbitica() {
   const habTaskURL = "https://habitica.com/api/v3/tasks/";
 
   const today = new Date();
-  const daysAhead = 7;
+  const daysAhead = 1; // Number of days to sync including today.
   const events = [];
   var dates = [];
+  // Computes the date range.
   for (i = 0; i < daysAhead; i++){
     dates.push(new Date(today.getTime() + i*1000*60*60*24));
   }
+  // Fetches the Google Calendar entries for the given date range.
   for(i = 0; i < daysAhead; i++){
     events[i] = CalendarApp.getCalendarsByName(CALENDAR_NAME)[0].getEventsForDay(dates[i]);
   }
-  console.log(dates);
-  console.log(today);
-  console.log(events);
-  console.log(events.length)
 
+  // Request templates.
   const templateParams = {
     _post: {
       method: "post",
@@ -37,53 +39,49 @@ function syncToHabbitica() {
     },
   };
 
-  var paramsTemplatePost = {
-    "method" : "post",
-    "headers" : {
-      "x-api-user" : HABITICA_ID, 
-      "x-api-key" : HABITICA_TOKEN
-    }
-  }
-
   const newTasks = [];
-  const existingTasks = fetchExistingTasks(habTaskURL, templateParams);
-  const completedTasksContent = fetchTodayCompletedTasks(
+  // Fetches tasks on Habitica.
+  const existingTasks = fetchExistingTasks(
+    habTaskURL,
+    templateParams
+  );
+  // Fetches tasks already marked as completed on Habitica.
+  const completedTasksContent = fetchCompletedTasksOnDate(
     habTaskURL,
     templateParams,
     today
   );
 
+  // Fetches tasks already present on Habitica.
   var present = [];
-  console.log(existingTasks);
   for (i = 0; i < existingTasks["data"].length; i++) {
     present.push(existingTasks["data"][i].alias);
   }
-  console.log("present: " + present);
 
+  // Deletes Habitica tasks checked as done then deletes correspondingg Google Calendar items.
   deleteCalendarTasks(habTaskURL, existingTasks, templateParams, dates);
-
-  var exists = fetchExistingTasks(habTaskURL, templateParams);
 
   for (j = 0; j < events.length; j++) {
     for (i = 0; i < events[j].length; i++) {
       if (newTasks.indexOf(events[j][i].getTitle() + events[j][i].getStartTime().toISOString()) === -1) {
         newTasks.push(events[j][i].getTitle() + events[j][i].getStartTime().toISOString());
 
+        // Google Calender item properties.
         var taskTitle = events[j][i].getTitle();
         var taskTimeStart = events[j][i].getStartTime().toISOString();
-        console.log(taskTimeStart);
         var taskTime = events[j][i].getStartTime().toString().substring(0, 25);
         var taskTimeEnd = events[j][i].getEndTime().toString().substring(0, 25);
         var ali = getDateFromISO(taskTimeStart).toString().toUpperCase() + getDateFromISO(taskTimeEnd).toString().toUpperCase() + events[j][i].getTitle().toString().toUpperCase().replace(/[^0-9a-z]/gi, '')
         var description = removeTags(events[j][i].getDescription());
-        var descriptionArray;
+
+        var descriptionArray = [];
+        // Split the lines of a description in separate subtasks if a description is present in Google Calendar item.
         if (description.length > 0) {
           descriptionArray = description.split("$br$");
         }
         else {
           descriptionArray = [];
         }
-        console.log(ali);
         const params = templateParams._post;
         params["payload"] = {
           text: ":calendar: " + taskTitle,
@@ -96,47 +94,38 @@ function syncToHabbitica() {
           repeat: "false"
         }
 
-
-        
+        // Check if task is marked as completed.
         var paramsText = completedTasksContent.indexOf(params.payload.text);
-        if (paramsText == -1) {
-          console.log("Fetching " + taskTitle);
+        // Tasks is new and will be added.
+        if (paramsText == -1 || params.payload.alias != present[present.indexOf(params.payload.alias)]) {
           UrlFetchApp.fetch(habTaskURL + "user", params);
           Utilities.sleep(5000);
-        }
-        else {
-          console.log("New duplicate task: " + params.payload.alias);
-          console.log("New duplicate task: " + present[present.indexOf(params.payload.alias)]);
-          if (params.payload.alias != present[present.indexOf(params.payload.alias)]) {
-            console.log("New task: " + params.payload.alias);
-            UrlFetchApp.fetch(habTaskURL + "user", params);
-            Utilities.sleep(5000);
-              if (descriptionArray.length > 0) {
-              var retrievedTasks = JSON.parse(UrlFetchApp.fetch(habTaskURL + "user?type=dailys", templateParams._get));
-              console.log("ID: " + retrievedTasks);
-              var retrievedID = retrievedTasks["data"][0]._id;
-              console.log("ID2: " + retrievedID);
-              var urlTask = "https://habitica.com/api/v3/tasks/" + retrievedID + "/checklist";
-              for (k = 0; k < descriptionArray.length; k++) {
-                var paramsChecklist = paramsTemplatePost;
-                paramsChecklist["payload"] = {
-                  "text" : descriptionArray[k]
-                }
-                UrlFetchApp.fetch(urlTask, paramsChecklist);
-                Utilities.sleep(5000);
+          // Add description lines as subtasks.
+          if (descriptionArray.length != 0) {
+            var retrievedTasks = JSON.parse(UrlFetchApp.fetch(habTaskURL + "user?type=dailys", templateParams._get));
+            Utilities.sleep(100);
+            var retrievedID = retrievedTasks["data"][0]._id;
+            var urlTask = "https://habitica.com/api/v3/tasks/" + retrievedID + "/checklist";
+            for (k = 0; k < descriptionArray.length; k++) {
+              var paramsChecklist = templateParams._post;
+              paramsChecklist["payload"] = {
+                "text" : descriptionArray[k]
               }
+              UrlFetchApp.fetch(urlTask, paramsChecklist);
+              Utilities.sleep(5000);
             }
           }
         }
       }
     }
-    console.log(newTasks);
   }
 
+  // Sorts the tasks chronologically.
   var sorting = fetchExistingTasks(habTaskURL, templateParams);
-  console.log(sorting.data[0]);
   var sortArray = [];
   var unsortedArray = [];
+
+  // Checks order of tasks.
   for (i = 0; i < sorting.data.length; i++) {
     if (sorting.data[i].type == "daily") {
       if (sorting.data[i].notes != null) {
@@ -144,30 +133,35 @@ function syncToHabbitica() {
           sortArray.push({date: sorting.data[i].startDate, time: sorting.data[i].notes.substring(15, sorting.data[i].notes.length-1), id: sorting.data[i]._id, text: sorting.data[i].text});
           unsortedArray.push({date: sorting.data[i].startDate, time: sorting.data[i].notes.substring(15, sorting.data[i].notes.length-1), id: sorting.data[i]._id, text: sorting.data[i].text});
         }
+        // Tasks created by the user, keeps these on top.
         else {
           sortArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
           unsortedArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
         }
       }
+      // Tasks created by the user, keeps these on top.
       else {
         sortArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
         unsortedArray.push({date: sorting.data[i].startDate, time: "01 1970 00:00:00", id: sorting.data[i]._id, text: sorting.data[i].text});
       }
     }
   }
+
+  // Sorting priorities.
   sortArray.sort((a, b) => (a.date > b.date) ? 1 : (a.date === b.date) ? ((a.time > b.time) ? 1 : (a.time === b.time) ? ((a.text > b.text) ? 1 : -1 ) : -1 ) : -1 )
-  console.log(sortArray);
-  console.log(unsortedArray);
   var needsSorting = false;
+
+  // Check if sorting is needed.
   for (var g = 0; g < sortArray.length; g++) {
     if(sortArray[g].date != unsortedArray[g].date || sortArray[g].time != unsortedArray[g].time) {
       needsSorting = true;
       break;
     }
   }
+
+  // Sorts tasks chronologically if not already sorted that way.
   if (needsSorting) {
     sortArray.reverse();
-    console.log("Sorting");
     for (i = 0; i < sortArray.length; i++) {
       UrlFetchApp.fetch(habTaskURL + sortArray[i].id + "/move/to/0", templateParams._post);
       Utilities.sleep(5000);
@@ -175,6 +169,7 @@ function syncToHabbitica() {
   }
 }
 
+// Fetches current dailies from Habitica.
 function fetchExistingTasks(habTaskURL, templateParams) {
   const response = UrlFetchApp.fetch(
     habTaskURL + "user?type=dailys",
@@ -183,20 +178,27 @@ function fetchExistingTasks(habTaskURL, templateParams) {
   return JSON.parse(response.getContentText());
 }
 
+// Delete specified Habitica items.
 function deleteCalendarTasks(habTaskURL, habTasks, templateParams, dates) {
+
+  // Loop through all tasks.
   for (j = 0; j < habTasks.data.length; j++) {
+
+    // If tasks was created by this script, delete it if it is marked as completed.
     if (habTasks.data[j].text.indexOf(":calendar: ") > -1 && habTasks.data[j].completed == true) {
-      console.log(habTasks.data[j]);
       UrlFetchApp.fetch(
         habTaskURL + habTasks.data[j].id,
         templateParams._delete
       );
+
+      // Delete corresponding Google Calender item.
       deleteCalendarEvents(habTasks.data[j].text, dates, habTasks.data[j].startDate);
     }
   }
 }
 
-function fetchTodayCompletedTasks(habTaskURL, templateParams, today) {
+// Fetches tasks completed on specified date.
+function fetchCompletedTasksOnDate(habTaskURL, templateParams, dateValue) {
   const tasksContent = [];
   const response = UrlFetchApp.fetch(
     habTaskURL + "user?type=dailys",
@@ -207,8 +209,7 @@ function fetchTodayCompletedTasks(habTaskURL, templateParams, today) {
   for (i = 0; i < tasks.data.length; i++) {
     if (tasks.data[i].text.indexOf(":calendar: ") > -1) {
       const taskDate = new Date(tasks.data[i].startDate).getDate();
-      if (taskDate + 12 !== today.getDate()) {
-        console.log(tasks.data[i]);
+      if (taskDate + 12 !== dateValue.getDate()) {
         tasksContent.push(tasks.data[i].text);
       }
     }
@@ -216,9 +217,8 @@ function fetchTodayCompletedTasks(habTaskURL, templateParams, today) {
   return tasksContent;
 }
 
-// deletes calendar events from Google Calendar based on title
+// Deletes calendar events from Google Calendar.
 function deleteCalendarEvents(eventTitle, dates, dateTimeVal) {
-  console.log(dateTimeVal);
   var dateTimeValueTemp = getDateFromISO(dateTimeVal) + 1000*60*60*12;
   var dateTimeValue = new Date(dateTimeValueTemp).toISOString();
   var title = eventTitle.replace(':calendar: ', '');
@@ -228,17 +228,15 @@ function deleteCalendarEvents(eventTitle, dates, dateTimeVal) {
   var eventsCalendar = calendar.getEvents(fromDate, toDate);
   for(i = 0; i < eventsCalendar.length;i++){
     var ev = eventsCalendar[i];
-    console.log(ev.getStartTime().toISOString().substring(0,10)==dateTimeValue.substring(0,10));
-    console.log(ev.getStartTime().toISOString().substring(0,10));
-    console.log(dateTimeValue.substring(0,10));
+
+    // Delete Google Calendar item only if Title, Creator and Start time match.
     if(ev.getTitle()==title && ev.getCreators()==CALENDAR_MAIL_ADDRESS && ev.getStartTime().toISOString().substring(0,10)==dateTimeValue.substring(0,10)){
-    // show event name in log
-    Logger.log(ev.getTitle()); 
-    ev.deleteEvent();
+      ev.deleteEvent();
     }
   }
 }
 
+// Gets the date given an ISO date.
 function getDateFromISO(string) {
   try{
     var aDate = new Date();
@@ -269,6 +267,7 @@ function getDateFromISO(string) {
   }
 }
 
+// Remove HTML tags from input.
 function removeTags(str) {
     if ((str===null) || (str===''))
         return false;
