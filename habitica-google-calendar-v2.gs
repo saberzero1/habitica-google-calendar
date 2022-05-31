@@ -176,6 +176,7 @@ function syncToHabbitica() {
   }
 }
 
+// Gets the index in the array of given value.
 function sortedIndex(array, value) {
     var low = 0,
         high = array.length;
